@@ -13,6 +13,15 @@ type ApiState = {
   ok: boolean | null;
 };
 
+async function readApiJson(response: Response) {
+  const text = await response.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`API returned ${response.status}: ${text.slice(0, 120) || response.statusText}`);
+  }
+}
+
 function App() {
   const [tab, setTab] = useState<Tab>("profile");
   const [license, setLicense] = useState("");
@@ -36,11 +45,15 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ license })
       });
-      const data = await response.json();
+      const data = await readApiJson(response);
       setRedeemState({ loading: false, message: data.message || "Done", ok: Boolean(data.success) });
       if (data.success) setLicenseInfo(data.license);
-    } catch {
-      setRedeemState({ loading: false, message: "Could not contact the API.", ok: false });
+    } catch (error) {
+      setRedeemState({
+        loading: false,
+        message: error instanceof Error ? error.message : "Could not contact the API.",
+        ok: false
+      });
     }
   }
 
@@ -53,10 +66,14 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user: resetUser })
       });
-      const data = await response.json();
+      const data = await readApiJson(response);
       setResetState({ loading: false, message: data.message || "Done", ok: Boolean(data.success) });
-    } catch {
-      setResetState({ loading: false, message: "Could not contact the API.", ok: false });
+    } catch (error) {
+      setResetState({
+        loading: false,
+        message: error instanceof Error ? error.message : "Could not contact the API.",
+        ok: false
+      });
     }
   }
 
