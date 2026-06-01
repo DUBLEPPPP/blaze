@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 type KeyRecord = {
   key?: string;
   status?: string;
@@ -5,6 +7,7 @@ type KeyRecord = {
   expires?: number | string;
   expiry?: number | string;
   level?: number | string;
+  duration?: number | string;
 };
 
 function sendJson(res: any, status: number, body: unknown) {
@@ -12,6 +15,32 @@ function sendJson(res: any, status: number, body: unknown) {
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "no-store");
   res.end(JSON.stringify(body));
+}
+
+function parseCookies(req: any) {
+  const raw = String(req.headers.cookie || "");
+  return Object.fromEntries(raw.split(";").map((item) => {
+    const [key, ...value] = item.trim().split("=");
+    return [key, decodeURIComponent(value.join("=") || "")];
+  }).filter(([key]) => key));
+}
+
+function sign(payload: string) {
+  const secret = process.env.SESSION_SECRET || "change-this-session-secret";
+  return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+function readSession(req: any) {
+  const token = parseCookies(req).blaze_session;
+  if (!token) return null;
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature || sign(payload) !== signature) return null;
+  return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+}
+
+function setSession(res: any, session: any) {
+  const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
+  res.setHeader("Set-Cookie", `blaze_session=${payload}.${sign(payload)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`);
 }
 
 async function readBody(req: any) {
@@ -50,6 +79,46 @@ async function keyAuthSellerRequest(params: Record<string, string>) {
   }
 }
 
+async function keyAuthAppRequest(params: Record<string, string>) {
+  const name = process.env.KEYAUTH_APP_NAME || "blaze";
+  const ownerid = process.env.KEYAUTH_OWNER_ID || "EXhIuzzp52";
+  const ver = process.env.KEYAUTH_VERSION || "1.0";
+  const query = new URLSearchParams({ name, ownerid, ver, ...params });
+  const response = await fetch(`https://keyauth.win/api/1.3/?${query.toString()}`);
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text) as Record<string, any>;
+  } catch {
+    throw new Error(`Invalid KeyAuth app response (${response.status}): ${text.slice(0, 160)}`);
+  }
+}
+
+async function registerLicenseToDiscord(license: string, discordId: string) {
+  const username = `discord_${discordId}`;
+  const password = crypto.createHash("sha256").update(`${discordId}:${license}`).digest("hex").slice(0, 32);
+  const init = await keyAuthAppRequest({ type: "init" });
+
+  if (!init.success || !init.sessionid) {
+    return { success: false, username, message: String(init.message || "KeyAuth init failed") };
+  }
+
+  const result = await keyAuthAppRequest({
+    type: "register",
+    sessionid: String(init.sessionid),
+    username,
+    pass: password,
+    key: license,
+    hwid: `DISCORD-${discordId}`
+  });
+
+  if (!result.success && /already|used|taken/i.test(String(result.message || ""))) {
+    return { success: true, username, message: "License is already linked." };
+  }
+
+  return { success: Boolean(result.success), username, message: String(result.message || "License registered") };
+}
+
 function extractKeys(value: unknown): KeyRecord[] {
   if (!value || typeof value !== "object") return [];
   const data = value as Record<string, unknown>;
@@ -64,6 +133,13 @@ function maskKey(key: string) {
   return `${key.slice(0, 6)}-${"*".repeat(8)}-${key.slice(-4)}`;
 }
 
+function normalizeExpiry(value: unknown) {
+  if (value === null || value === undefined || value === "") return null;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return null;
+  return numeric > 100000000000 ? numeric : numeric * 1000;
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     sendJson(res, 405, { success: false, message: "Method not allowed" });
@@ -71,6 +147,12 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    const session = readSession(req);
+    if (!session?.discord?.id) {
+      sendJson(res, 401, { success: false, message: "Login with Discord first." });
+      return;
+    }
+
     const body = await readBody(req);
     const license = String(body.license ?? "").trim();
 
@@ -79,32 +161,31 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const result = await keyAuthSellerRequest({
-      type: "fetchallkeys",
-      format: "JSON"
-    });
-
-    if (!result.success) {
-      sendJson(res, 400, result);
+    const register = await registerLicenseToDiscord(license, String(session.discord.id));
+    if (!register.success) {
+      sendJson(res, 400, { success: false, message: register.message });
       return;
     }
 
+    const result = await keyAuthSellerRequest({ type: "fetchallkeys", format: "JSON" });
     const match = extractKeys(result).find((item) => String(item.key ?? "").trim() === license);
-    if (!match) {
-      sendJson(res, 404, { success: false, message: "License was not found." });
-      return;
-    }
+    const expires = normalizeExpiry(match?.expires ?? match?.expiry);
 
+    const licenseInfo = {
+      key: maskKey(license),
+      status: "ACTIVE",
+      username: register.username,
+      level: match?.level ?? 1,
+      expires,
+      days: expires ? Math.max(0, Math.ceil((expires - Date.now()) / 86400000)) : null
+    };
+
+    session.license = licenseInfo;
+    setSession(res, session);
     sendJson(res, 200, {
       success: true,
-      message: "License found.",
-      license: {
-        key: maskKey(license),
-        status: match.status ?? "unknown",
-        user: match.usedby ?? "",
-        level: match.level ?? 1,
-        expires: match.expires ?? match.expiry ?? null
-      }
+      message: "License linked to Discord.",
+      license: licenseInfo
     });
   } catch (error) {
     sendJson(res, 500, {

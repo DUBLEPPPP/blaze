@@ -70,7 +70,8 @@ a {
   font-weight: 800;
 }
 
-.top-nav button {
+.top-nav button,
+.top-nav a {
   border: 0;
   padding: 8px 0;
   color: #6d747d;
@@ -79,11 +80,13 @@ a {
   text-transform: inherit;
   letter-spacing: inherit;
   font-weight: inherit;
+  text-decoration: none;
   transition: color 160ms ease, text-shadow 160ms ease;
 }
 
 .top-nav button:hover,
-.top-nav button.active {
+.top-nav button.active,
+.top-nav a:hover {
   color: #ff7047;
   text-shadow: 0 0 20px rgba(255, 112, 71, 0.42);
 }
@@ -199,12 +202,157 @@ a {
 .info-card strong {
   display: block;
   margin-top: 10px;
+  max-width: 90%;
+  overflow-wrap: anywhere;
   font-size: 28px;
   font-weight: 950;
 }
 
+.info-card em {
+  color: #898989;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 800;
+}
+
 .danger {
   color: #ff5b62;
+}
+
+.premium {
+  color: #6df585;
+  text-shadow: 0 0 22px rgba(109, 245, 133, 0.22);
+}
+
+.login-page {
+  position: relative;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.46), #030303 72%),
+    radial-gradient(circle at 50% 0%, rgba(255, 112, 71, 0.14), transparent 36%),
+    #020202;
+}
+
+.login-bg {
+  position: fixed;
+  inset: 0;
+  opacity: 0.20;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.96), rgba(0, 0, 0, 0.58)),
+    url("https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1800&q=80");
+  background-position: center;
+  background-size: cover;
+  filter: saturate(0.7);
+}
+
+.login-card {
+  position: relative;
+  width: min(460px, calc(100vw - 32px));
+  min-height: 470px;
+  padding: 58px 50px 46px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-top-color: rgba(255, 112, 71, 0.85);
+  border-radius: 26px;
+  background: rgba(5, 5, 5, 0.92);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.56), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.brand-mark {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 28px;
+  border-radius: 18px;
+  color: #ff7047;
+  font-size: 28px;
+  font-weight: 950;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: 0 0 38px rgba(255, 112, 71, 0.16);
+}
+
+.login-card h1 {
+  margin: 0 0 16px;
+  color: #f7f7f7;
+  font-size: 30px;
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.login-card h1 span {
+  color: #ff7047;
+}
+
+.login-card p {
+  margin: 0 auto 34px;
+  max-width: 340px;
+  color: #8c8c8c;
+  line-height: 1.55;
+}
+
+.discord-button {
+  display: grid;
+  width: 100%;
+  height: 56px;
+  place-items: center;
+  border-radius: 11px;
+  color: white;
+  background: #5865f2;
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 0 18px 44px rgba(88, 101, 242, 0.22);
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.discord-button:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.secure-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  margin: 34px 0 26px;
+  color: #535353;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.secure-row span {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.fine-print {
+  margin-bottom: 0 !important;
+  font-size: 12px;
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  margin: 180px auto 0;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  border-top-color: #ff7047;
+  border-radius: 999px;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .panel {

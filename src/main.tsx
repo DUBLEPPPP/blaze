@@ -1,11 +1,32 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 
-const avatarUrl = "https://i.pinimg.com/736x/0d/ad/95/0dad951463f4f4f97294a7a976946b64.jpg";
+const fallbackAvatar = "https://i.pinimg.com/736x/0d/ad/95/0dad951463f4f4f97294a7a976946b64.jpg";
 const purchaseUrl = "https://www.pedri.lol/";
 
 type Tab = "profile" | "settings" | "purchase";
+
+type DiscordProfile = {
+  id: string;
+  username: string;
+  name: string;
+  avatar: string;
+};
+
+type LicenseInfo = {
+  key?: string;
+  status?: string;
+  username?: string;
+  level?: number | string;
+  expires?: number | null;
+  days?: number | null;
+};
+
+type Session = {
+  discord: DiscordProfile;
+  license?: LicenseInfo | null;
+};
 
 type ApiState = {
   loading: boolean;
@@ -24,20 +45,37 @@ async function readApiJson(response: Response) {
 
 function App() {
   const [tab, setTab] = useState<Tab>("profile");
+  const [session, setSession] = useState<Session | null>(null);
+  const [loadingSession, setLoadingSession] = useState(true);
   const [license, setLicense] = useState("");
-  const [resetUser, setResetUser] = useState("");
-  const [licenseInfo, setLicenseInfo] = useState<any>(null);
   const [redeemState, setRedeemState] = useState<ApiState>({ loading: false, message: "", ok: null });
   const [resetState, setResetState] = useState<ApiState>({ loading: false, message: "", ok: null });
 
+  useEffect(() => {
+    fetch("/api/me")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return readApiJson(response);
+      })
+      .then((data) => {
+        if (data?.success) setSession(data.session);
+      })
+      .finally(() => setLoadingSession(false));
+  }, []);
+
+  const licenseInfo = session?.license || null;
   const licenseStatus = useMemo(() => {
     if (!licenseInfo) return "NO LICENSE";
     return String(licenseInfo.status || "ACTIVE").toUpperCase();
   }, [licenseInfo]);
 
+  const rank = licenseStatus === "ACTIVE" ? "PREMIUM" : "USER";
+  const daysText = licenseInfo?.days === null || licenseInfo?.days === undefined
+    ? "Lifetime / Unknown"
+    : `${licenseInfo.days} days left`;
+
   async function redeemLicense() {
-    setRedeemState({ loading: true, message: "Checking license...", ok: null });
-    setLicenseInfo(null);
+    setRedeemState({ loading: true, message: "Linking license...", ok: null });
 
     try {
       const response = await fetch("/api/redeem", {
@@ -47,7 +85,10 @@ function App() {
       });
       const data = await readApiJson(response);
       setRedeemState({ loading: false, message: data.message || "Done", ok: Boolean(data.success) });
-      if (data.success) setLicenseInfo(data.license);
+      if (data.success && session) {
+        setSession({ ...session, license: data.license });
+        setLicense("");
+      }
     } catch (error) {
       setRedeemState({
         loading: false,
@@ -63,8 +104,7 @@ function App() {
     try {
       const response = await fetch("/api/reset-hwid", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user: resetUser })
+        headers: { "Content-Type": "application/json" }
       });
       const data = await readApiJson(response);
       setResetState({ loading: false, message: data.message || "Done", ok: Boolean(data.success) });
@@ -77,6 +117,16 @@ function App() {
     }
   }
 
+  if (loadingSession) {
+    return <main className="login-page"><div className="login-card"><div className="loader" /></div></main>;
+  }
+
+  if (!session) {
+    return <LoginPage />;
+  }
+
+  const avatar = session.discord.avatar || fallbackAvatar;
+
   return (
     <main className="page-shell">
       <div className="ambient ambient-one" />
@@ -86,23 +136,24 @@ function App() {
         <button className={tab === "profile" ? "active" : ""} onClick={() => setTab("profile")}>Profile</button>
         <button className={tab === "settings" ? "active" : ""} onClick={() => setTab("settings")}>Settings</button>
         <button className={tab === "purchase" ? "active" : ""} onClick={() => setTab("purchase")}>Purchase</button>
+        <a href="/api/logout">Logout</a>
       </nav>
 
       <section className="hero-card">
         <div className="hero-media" />
         <div className="hero-overlay" />
-        <img className="avatar" src={avatarUrl} alt="Profile avatar" />
+        <img className="avatar" src={avatar} alt="Profile avatar" />
         <div className="hero-copy">
-          {licenseStatus === "EXPIRED" && <span className="expired-dot">Expired</span>}
-          <h1>/pedri.exe's</h1>
+          {licenseStatus !== "ACTIVE" && <span className="expired-dot">No active license</span>}
+          <h1>/{session.discord.name}'s</h1>
         </div>
       </section>
 
       {tab === "profile" && (
         <section className="grid profile-grid">
-          <InfoCard label="User ID" value="17845266" />
-          <InfoCard label="Rank" value="USER" />
-          <InfoCard label="License" value={licenseStatus} danger={licenseStatus !== "ACTIVE"} />
+          <InfoCard label="Discord ID" value={session.discord.id} />
+          <InfoCard label="Rank" value={rank} premium={rank === "PREMIUM"} />
+          <InfoCard label="License" value={licenseStatus} subValue={licenseInfo ? daysText : "Redeem a key"} danger={licenseStatus !== "ACTIVE"} />
         </section>
       )}
 
@@ -110,17 +161,16 @@ function App() {
         <section className="grid settings-grid">
           <div className="panel">
             <h2>Redeem License</h2>
-            <p className="muted">Check your KeyAuth license status before linking it to your profile.</p>
+            <p className="muted">Your key will be linked to this Discord account.</p>
             <input value={license} onChange={(event) => setLicense(event.target.value)} placeholder="blaze-xxxx-xxxx-xxxx" />
-            <button onClick={redeemLicense} disabled={redeemState.loading}>{redeemState.loading ? "Checking..." : "Redeem License"}</button>
+            <button onClick={redeemLicense} disabled={redeemState.loading}>{redeemState.loading ? "Linking..." : "Redeem License"}</button>
             <Status state={redeemState} />
           </div>
 
           <div className="panel">
             <h2>HWID Reset</h2>
-            <p className="muted">Enter the KeyAuth username connected to your license. Reset is handled by Seller API.</p>
-            <input value={resetUser} onChange={(event) => setResetUser(event.target.value)} placeholder="KeyAuth username" />
-            <button onClick={resetHwid} disabled={resetState.loading}>{resetState.loading ? "Resetting..." : "Reset HWID"}</button>
+            <p className="muted">Reset the PC lock for the license linked to your Discord account.</p>
+            <button onClick={resetHwid} disabled={resetState.loading || !licenseInfo}>{resetState.loading ? "Resetting..." : "Reset HWID"}</button>
             <Status state={resetState} />
           </div>
         </section>
@@ -131,7 +181,7 @@ function App() {
           <div>
             <span className="eyebrow">Blaza PVP</span>
             <h2>Get Access</h2>
-            <p className="muted">Purchase a license and return here to check status or reset HWID.</p>
+            <p className="muted">Buy a license, log in with Discord, and redeem it here.</p>
           </div>
           <a href={purchaseUrl} target="_blank" rel="noreferrer">Buy License</a>
         </section>
@@ -140,11 +190,31 @@ function App() {
   );
 }
 
-function InfoCard({ label, value, danger = false }: { label: string; value: string; danger?: boolean }) {
+function LoginPage() {
+  const error = new URLSearchParams(window.location.search).get("auth_error");
+
+  return (
+    <main className="login-page">
+      <div className="login-bg" />
+      <section className="login-card">
+        <div className="brand-mark">B</div>
+        <h1>Sign in to <span>Blaza</span></h1>
+        <p>Access your dashboard to manage your license, reset HWID, and view premium status.</p>
+        <a className="discord-button" href="/api/discord-login">Login with Discord</a>
+        <div className="secure-row"><span />Secure Authentication<span /></div>
+        <p className="fine-print">No password required. Discord OAuth2 only.</p>
+        {error && <p className="status bad">{error}</p>}
+      </section>
+    </main>
+  );
+}
+
+function InfoCard({ label, value, subValue, danger = false, premium = false }: { label: string; value: string; subValue?: string; danger?: boolean; premium?: boolean }) {
   return (
     <article className="info-card">
       <span>{label}</span>
-      <strong className={danger ? "danger" : ""}>{value}</strong>
+      <strong className={danger ? "danger" : premium ? "premium" : ""}>{value}</strong>
+      {subValue && <em>{subValue}</em>}
     </article>
   );
 }

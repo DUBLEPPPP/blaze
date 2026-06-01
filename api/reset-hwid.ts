@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 function sendJson(res: any, status: number, body: unknown) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");
@@ -5,25 +7,25 @@ function sendJson(res: any, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
-async function readBody(req: any) {
-  if (req.body && typeof req.body === "object") return req.body;
-  if (typeof req.body === "string") return JSON.parse(req.body || "{}");
+function parseCookies(req: any) {
+  const raw = String(req.headers.cookie || "");
+  return Object.fromEntries(raw.split(";").map((item) => {
+    const [key, ...value] = item.trim().split("=");
+    return [key, decodeURIComponent(value.join("=") || "")];
+  }).filter(([key]) => key));
+}
 
-  return new Promise<any>((resolve, reject) => {
-    let raw = "";
-    req.on("data", (chunk: Buffer) => {
-      raw += chunk.toString("utf8");
-      if (raw.length > 10000) reject(new Error("Request body too large"));
-    });
-    req.on("end", () => {
-      try {
-        resolve(raw ? JSON.parse(raw) : {});
-      } catch {
-        reject(new Error("Invalid JSON body"));
-      }
-    });
-    req.on("error", reject);
-  });
+function sign(payload: string) {
+  const secret = process.env.SESSION_SECRET || "change-this-session-secret";
+  return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+function readSession(req: any) {
+  const token = parseCookies(req).blaze_session;
+  if (!token) return null;
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature || sign(payload) !== signature) return null;
+  return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
 }
 
 async function keyAuthSellerRequest(params: Record<string, string>) {
@@ -48,19 +50,20 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const body = await readBody(req);
-    const user = String(body.user ?? "").trim();
+    const session = readSession(req);
+    const user = String(session?.license?.username || "");
 
-    if (!user) {
-      sendJson(res, 400, { success: false, message: "Enter the KeyAuth username to reset." });
+    if (!session?.discord?.id) {
+      sendJson(res, 401, { success: false, message: "Login with Discord first." });
       return;
     }
 
-    const result = await keyAuthSellerRequest({
-      type: "resetuser",
-      user
-    });
+    if (!user) {
+      sendJson(res, 400, { success: false, message: "Redeem a license before resetting HWID." });
+      return;
+    }
 
+    const result = await keyAuthSellerRequest({ type: "resetuser", user });
     sendJson(res, result.success ? 200 : 400, result);
   } catch (error) {
     sendJson(res, 500, {
