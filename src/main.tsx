@@ -37,12 +37,12 @@ type ApiState = {
   ok: boolean | null;
 };
 
-const navItems: Array<{ id: Tab; icon: string; label: string }> = [
-  { id: "overview", icon: "O", label: "Overview" },
-  { id: "redeem", icon: "K", label: "Redeem Code" },
-  { id: "reset", icon: "R", label: "HWID Reset" },
-  { id: "download", icon: "D", label: "Download" },
-  { id: "purchase", icon: "P", label: "Purchase" }
+const navItems: Array<{ id: Tab; label: string }> = [
+  { id: "overview", label: "Overview" },
+  { id: "redeem", label: "Redeem Code" },
+  { id: "reset", label: "HWID Reset" },
+  { id: "download", label: "Download" },
+  { id: "purchase", label: "Purchase" }
 ];
 
 async function readApiJson(response: Response) {
@@ -148,7 +148,7 @@ function App() {
         <div className="nav-card">
           {navItems.map((item) => (
             <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}>
-              <span>{item.icon}</span>
+              <span><NavIcon type={item.id} /></span>
               {item.label}
             </button>
           ))}
@@ -264,6 +264,72 @@ function InfoCard({ label, value, subValue, danger = false, premium = false }: {
 function Status({ state }: { state: ApiState }) {
   if (!state.message) return null;
   return <p className={`status ${state.ok === false ? "bad" : state.ok ? "good" : ""}`}>{state.message}</p>;
+}
+
+function NavIcon({ type }: { type: Tab }) {
+  const common = {
+    width: 18,
+    height: 18,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true
+  };
+
+  if (type === "overview") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="3" width="7" height="7" rx="2" />
+        <rect x="14" y="3" width="7" height="7" rx="2" />
+        <rect x="3" y="14" width="7" height="7" rx="2" />
+        <rect x="14" y="14" width="7" height="7" rx="2" />
+      </svg>
+    );
+  }
+
+  if (type === "redeem") {
+    return (
+      <svg {...common}>
+        <circle cx="7.5" cy="14.5" r="3.5" />
+        <path d="M10.2 12L20 2.2" />
+        <path d="M15 7.2l2.2 2.2" />
+        <path d="M17.8 4.4L20 6.6" />
+      </svg>
+    );
+  }
+
+  if (type === "reset") {
+    return (
+      <svg {...common}>
+        <path d="M20 12a8 8 0 1 1-2.35-5.65" />
+        <path d="M20 4v6h-6" />
+        <path d="M12 8v5l3 2" />
+      </svg>
+    );
+  }
+
+  if (type === "download") {
+    return (
+      <svg {...common}>
+        <path d="M12 3v11" />
+        <path d="M7 10l5 5 5-5" />
+        <path d="M5 21h14" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg {...common}>
+      <path d="M20 12v8H4v-8" />
+      <path d="M2 7h20v5H2z" />
+      <path d="M12 22V7" />
+      <path d="M12 7H8.5A2.5 2.5 0 1 1 11 4.5c0 1.2 1 2.5 1 2.5z" />
+      <path d="M12 7h3.5A2.5 2.5 0 1 0 13 4.5c0 1.2-1 2.5-1 2.5z" />
+    </svg>
+  );
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

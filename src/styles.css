@@ -135,9 +135,12 @@ a {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.035);
-  font-size: 13px;
-  font-weight: 950;
   text-align: center;
+}
+
+.nav-card button span svg {
+  width: 18px;
+  height: 18px;
 }
 
 .nav-card button:hover,
