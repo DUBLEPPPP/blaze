@@ -16,7 +16,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.90), rgba(0, 0, 0, 0.97)),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.94), rgba(0, 0, 0, 0.97)),
     url("./asset/bacgraund.jpg"),
     #000;
   background-attachment: fixed;
@@ -77,10 +77,10 @@ a {
   height: 70px;
   display: grid;
   place-items: center;
-  border: 1px solid rgba(119, 218, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 18px;
-  color: #8fe4ff;
-  background: rgba(0, 0, 0, 0.90);
+  color: #f4f4f4;
+  background: rgba(0, 0, 0, 0.94);
   font-size: 13px;
   font-weight: 950;
   letter-spacing: 0.32em;
@@ -96,8 +96,8 @@ a {
 .purchase-panel,
 .download-panel,
 .content-header {
-  border: 1px solid rgba(119, 218, 255, 0.13);
-  background: rgba(0, 0, 0, 0.90);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(0, 0, 0, 0.94);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 24px 70px rgba(0, 0, 0, 0.30);
   backdrop-filter: blur(18px);
 }
@@ -127,23 +127,32 @@ a {
 }
 
 .nav-card button span {
-  width: 22px;
-  color: #4e5b66;
-  font-size: 19px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: #a7a7a7;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 13px;
+  font-weight: 950;
   text-align: center;
 }
 
 .nav-card button:hover,
 .nav-card button.active {
   color: #f7fbff;
-  border-color: rgba(117, 213, 255, 0.26);
-  background: linear-gradient(135deg, rgba(78, 190, 255, 0.18), rgba(58, 112, 255, 0.10));
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.075);
   transform: translateX(2px);
 }
 
 .nav-card button.active span {
-  color: #78ddff;
-  text-shadow: 0 0 18px rgba(120, 221, 255, 0.35);
+  color: #050505;
+  background: #f4f4f4;
+  border-color: #f4f4f4;
+  text-shadow: none;
 }
 
 .logout-card {
@@ -159,8 +168,8 @@ a {
 }
 
 .logout-card:hover {
-  color: #78ddff;
-  border-color: rgba(120, 221, 255, 0.32);
+  color: #f4f4f4;
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .content-shell {
@@ -192,7 +201,7 @@ a {
 }
 
 .header-user span {
-  color: #78ddff;
+  color: #f4f4f4;
   font-size: 12px;
   font-weight: 950;
   letter-spacing: 0.16em;
@@ -201,10 +210,10 @@ a {
 .header-user img {
   width: 54px;
   height: 54px;
-  border: 2px solid rgba(120, 221, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.86);
   border-radius: 999px;
   object-fit: cover;
-  box-shadow: 0 0 28px rgba(120, 221, 255, 0.20);
+  box-shadow: 0 0 28px rgba(255, 255, 255, 0.08);
 }
 
 .overview-grid {
@@ -228,7 +237,7 @@ a {
 
 .profile-panel.has-banner {
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.90), rgba(0, 0, 0, 0.62) 55%, rgba(0, 0, 0, 0.90)),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.94), rgba(0, 0, 0, 0.62) 55%, rgba(0, 0, 0, 0.94)),
     var(--profile-banner),
     #000;
   background-position: center;
@@ -240,7 +249,8 @@ a {
   position: absolute;
   inset: auto -10% -55% 38%;
   height: 180px;
-  background: radial-gradient(circle, rgba(120, 221, 255, 0.10), transparent 68%);
+  display: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.04), transparent 68%);
   pointer-events: none;
 }
 
@@ -248,14 +258,14 @@ a {
   width: 112px;
   height: 112px;
   flex: 0 0 auto;
-  border: 3px solid #78ddff;
+  border: 3px solid #f4f4f4;
   border-radius: 28px;
   object-fit: cover;
-  box-shadow: 0 0 42px rgba(120, 221, 255, 0.18);
+  box-shadow: 0 0 42px rgba(255, 255, 255, 0.08);
 }
 
 .profile-panel span {
-  color: #78ddff;
+  color: #f4f4f4;
   font-size: 12px;
   font-weight: 950;
   letter-spacing: 0.18em;
@@ -290,7 +300,7 @@ a {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(115deg, rgba(88, 204, 255, 0.12), transparent 44%);
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.055), transparent 44%);
   opacity: 0.8;
   pointer-events: none;
 }
@@ -324,8 +334,8 @@ a {
 }
 
 .premium {
-  color: #78ddff;
-  text-shadow: 0 0 22px rgba(120, 221, 255, 0.32);
+  color: #f4f4f4;
+  text-shadow: 0 0 22px rgba(255, 255, 255, 0.14);
 }
 
 .panel {
@@ -361,31 +371,31 @@ input {
   margin-bottom: 18px;
   padding: 0 18px;
   color: #eef9ff;
-  border: 1px solid rgba(120, 221, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.10);
   border-radius: 14px;
   outline: none;
   background: rgba(255, 255, 255, 0.045);
 }
 
 input:focus {
-  border-color: rgba(120, 221, 255, 0.76);
-  box-shadow: 0 0 0 4px rgba(120, 221, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
 }
 
 button,
 .purchase-panel a,
 .download-actions a {
   height: 52px;
-  border: 1px solid rgba(120, 221, 255, 0.24);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(25, 132, 255, 0.94), rgba(126, 227, 255, 0.94));
+  background: #f4f4f4;
   color: #02101a;
   font-size: 13px;
   font-weight: 950;
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
-  box-shadow: 0 14px 32px rgba(42, 140, 255, 0.16);
+  box-shadow: 0 14px 32px rgba(255, 255, 255, 0.06);
   transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
 }
 
@@ -400,7 +410,7 @@ button:hover,
 .download-actions a:hover {
   transform: translateY(-1px);
   filter: brightness(1.08);
-  box-shadow: 0 0 32px rgba(120, 221, 255, 0.16);
+  box-shadow: 0 0 32px rgba(255, 255, 255, 0.10);
 }
 
 button:disabled {
@@ -417,7 +427,7 @@ button:disabled {
 }
 
 .status.good {
-  color: #78ddff;
+  color: #f4f4f4;
 }
 
 .status.bad {
@@ -460,7 +470,7 @@ button:disabled {
 
 .eyebrow {
   display: inline-block;
-  color: #78ddff;
+  color: #f4f4f4;
   font-size: 12px;
   font-weight: 950;
   letter-spacing: 0.18em;
@@ -484,7 +494,7 @@ button:disabled {
   inset: 0;
   opacity: 0.14;
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.90), rgba(0, 10, 22, 0.50)),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.94), rgba(0, 10, 22, 0.50)),
     url("./asset/bacgraund.jpg");
   background-position: center;
   background-size: cover;
@@ -497,8 +507,8 @@ button:disabled {
   min-height: 470px;
   padding: 58px 50px 46px;
   text-align: center;
-  border: 1px solid rgba(120, 221, 255, 0.14);
-  border-top-color: rgba(120, 221, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-top-color: rgba(255, 255, 255, 0.24);
   border-radius: 26px;
   background: rgba(5, 8, 14, 0.92);
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.56), inset 0 1px 0 rgba(255, 255, 255, 0.04);
@@ -511,11 +521,11 @@ button:disabled {
   place-items: center;
   margin: 0 auto 28px;
   border-radius: 18px;
-  color: #78ddff;
+  color: #f4f4f4;
   font-size: 28px;
   font-weight: 950;
   background: rgba(255, 255, 255, 0.055);
-  box-shadow: 0 0 38px rgba(120, 221, 255, 0.18);
+  box-shadow: 0 0 38px rgba(255, 255, 255, 0.08);
 }
 
 .login-card h1 {
@@ -527,7 +537,7 @@ button:disabled {
 }
 
 .login-card h1 span {
-  color: #78ddff;
+  color: #f4f4f4;
 }
 
 .login-card p {
@@ -543,7 +553,7 @@ button:disabled {
   height: 56px;
   place-items: center;
   border-radius: 12px;
-  background: linear-gradient(135deg, #2a8cff, #78ddff);
+  background: #f4f4f4;
   color: #02101a;
   text-decoration: none;
   text-transform: uppercase;
@@ -586,7 +596,7 @@ button:disabled {
   height: 40px;
   margin: 180px auto 0;
   border: 3px solid rgba(255, 255, 255, 0.12);
-  border-top-color: #78ddff;
+  border-top-color: #f4f4f4;
   border-radius: 999px;
   animation: spin 800ms linear infinite;
 }

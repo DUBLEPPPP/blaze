@@ -38,11 +38,11 @@ type ApiState = {
 };
 
 const navItems: Array<{ id: Tab; icon: string; label: string }> = [
-  { id: "overview", icon: "01", label: "Overview" },
-  { id: "redeem", icon: "02", label: "Redeem Code" },
-  { id: "reset", icon: "03", label: "HWID Reset" },
-  { id: "download", icon: "04", label: "Download" },
-  { id: "purchase", icon: "05", label: "Purchase" }
+  { id: "overview", icon: "O", label: "Overview" },
+  { id: "redeem", icon: "K", label: "Redeem Code" },
+  { id: "reset", icon: "R", label: "HWID Reset" },
+  { id: "download", icon: "D", label: "Download" },
+  { id: "purchase", icon: "P", label: "Purchase" }
 ];
 
 async function readApiJson(response: Response) {
