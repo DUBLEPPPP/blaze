@@ -5,6 +5,8 @@ type DiscordUser = {
   username: string;
   global_name?: string | null;
   avatar?: string | null;
+  banner?: string | null;
+  accent_color?: number | null;
 };
 
 type KeyRecord = {
@@ -129,6 +131,10 @@ async function findDiscordLicense(discordId: string) {
 }
 
 async function makeSession(user: DiscordUser) {
+  const banner = user.banner
+    ? `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.png?size=1024`
+    : null;
+
   const payload = base64url(JSON.stringify({
     discord: {
       id: user.id,
@@ -136,7 +142,9 @@ async function makeSession(user: DiscordUser) {
       name: user.global_name || user.username,
       avatar: user.avatar
         ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
-        : `https://cdn.discordapp.com/embed/avatars/${Number(user.id) % 5}.png`
+        : `https://cdn.discordapp.com/embed/avatars/${Number(user.id) % 5}.png`,
+      banner,
+      accentColor: user.accent_color ?? null
     },
     license: await findDiscordLicense(user.id),
     createdAt: Date.now()

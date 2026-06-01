@@ -12,6 +12,8 @@ type DiscordProfile = {
   username: string;
   name: string;
   avatar: string;
+  banner?: string | null;
+  accentColor?: number | null;
 };
 
 type LicenseInfo = {
@@ -36,11 +38,11 @@ type ApiState = {
 };
 
 const navItems: Array<{ id: Tab; icon: string; label: string }> = [
-  { id: "overview", icon: "◎", label: "Overview" },
-  { id: "redeem", icon: "◇", label: "Redeem Code" },
-  { id: "reset", icon: "↻", label: "HWID Reset" },
-  { id: "download", icon: "↓", label: "Download" },
-  { id: "purchase", icon: "✦", label: "Purchase" }
+  { id: "overview", icon: "01", label: "Overview" },
+  { id: "redeem", icon: "02", label: "Redeem Code" },
+  { id: "reset", icon: "03", label: "HWID Reset" },
+  { id: "download", icon: "04", label: "Download" },
+  { id: "purchase", icon: "05", label: "Purchase" }
 ];
 
 async function readApiJson(response: Response) {
@@ -135,12 +137,12 @@ function App() {
   }
 
   const avatar = session.discord.avatar || fallbackAvatar;
+  const profileStyle = session.discord.banner
+    ? ({ "--profile-banner": `url("${session.discord.banner}")` } as React.CSSProperties)
+    : undefined;
 
   return (
     <main className="dashboard-shell">
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-
       <aside className="side-nav">
         <div className="side-brand">BLAZA</div>
         <div className="nav-card">
@@ -168,7 +170,7 @@ function App() {
 
         {tab === "overview" && (
           <section className="overview-grid">
-            <article className="profile-panel">
+            <article className={session.discord.banner ? "profile-panel has-banner" : "profile-panel"} style={profileStyle}>
               <img src={avatar} alt="Profile avatar" />
               <div>
                 <span>{rank}</span>
