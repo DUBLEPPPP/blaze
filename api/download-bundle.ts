@@ -143,10 +143,6 @@ async function loadExecutable() {
   return readFile(path.join(process.cwd(), "public", "Blaza.exe")).catch(() => null);
 }
 
-async function loadPublicFile(name: string) {
-  return readFile(path.join(process.cwd(), "public", name)).catch(() => null);
-}
-
 export default async function handler(req: any, res: any) {
   try {
     const session = readSession(req);
@@ -179,11 +175,6 @@ export default async function handler(req: any, res: any) {
     const exe = await loadExecutable();
     if (exe) {
       files.unshift({ name: process.env.BLAZA_EXE_NAME || "Blaza.exe", data: exe });
-
-      for (const dllName of ["libcurl.dll", "z.dll"]) {
-        const dll = await loadPublicFile(dllName);
-        if (dll) files.push({ name: dllName, data: dll });
-      }
     } else {
       files.push({
         name: "README.txt",
