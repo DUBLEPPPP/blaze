@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import { findDiscordLicense } from "../src/server/license";
 
 type DiscordUser = {
   id: string;
@@ -43,7 +42,7 @@ async function makeSession(user: DiscordUser) {
       banner,
       accentColor: user.accent_color ?? null
     },
-    license: await findDiscordLicense(user.id),
+    license: null,
     createdAt: Date.now()
   }));
   return `${payload}.${sign(payload)}`;
