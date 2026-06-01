@@ -125,6 +125,7 @@ function App() {
   const daysText = licenseInfo?.days === null || licenseInfo?.days === undefined
     ? "Lifetime / Unknown"
     : `${licenseInfo.days} days left`;
+  const licenseDanger = licenseStatus !== "ACTIVE";
 
   async function redeemLicense() {
     setRedeemState({ loading: true, message: "Linking license...", ok: null });
@@ -237,7 +238,7 @@ function App() {
               </div>
             </article>
             <InfoCard label="Rank" value={rank} premium={rank === "PREMIUM"} />
-            <InfoCard label="License" value={licenseStatus} subValue={licenseInfo ? daysText : "Redeem a key"} danger={licenseStatus !== "ACTIVE"} />
+            <InfoCard label="License" value={licenseStatus} subValue={licenseInfo && licenseStatus === "ACTIVE" ? daysText : licenseInfo ? "Contact support" : "Redeem a key"} danger={licenseDanger} />
             <InfoCard label="Config" value={licenseInfo ? "READY" : "LOCKED"} subValue={licenseInfo ? "Download enabled" : "License required"} danger={!licenseInfo} />
           </section>
         )}

@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { findDiscordLicense } from "../src/server/license";
 
 function json(res: any, status: number, body: unknown) {
   res.statusCode = status;
@@ -28,13 +29,24 @@ function readSession(req: any) {
   return JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
 }
 
-export default function handler(req: any, res: any) {
+function setSession(res: any, session: any) {
+  const payload = Buffer.from(JSON.stringify(session)).toString("base64url");
+  res.setHeader("Set-Cookie", `blaze_session=${payload}.${sign(payload)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`);
+}
+
+export default async function handler(req: any, res: any) {
   try {
     const session = readSession(req);
     if (!session) {
       json(res, 401, { success: false, message: "Not logged in." });
       return;
     }
+
+    if (session.discord?.id) {
+      session.license = await findDiscordLicense(String(session.discord.id));
+      setSession(res, session);
+    }
+
     json(res, 200, { success: true, session });
   } catch {
     json(res, 401, { success: false, message: "Invalid session." });
