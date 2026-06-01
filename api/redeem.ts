@@ -10,6 +10,18 @@ type KeyRecord = {
   duration?: number | string;
 };
 
+type UserDataResponse = {
+  success?: boolean;
+  subscriptions?: Array<{
+    subscription?: string;
+    expiry?: number | string;
+    timeleft?: number | string;
+  }>;
+  expires?: number | string;
+  expiry?: number | string;
+  message?: string;
+};
+
 function sendJson(res: any, status: number, body: unknown) {
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");
@@ -112,10 +124,6 @@ async function registerLicenseToDiscord(license: string, discordId: string) {
     hwid: `DISCORD-${discordId}`
   });
 
-  if (!result.success && /already|used|taken/i.test(String(result.message || ""))) {
-    return { success: true, username, message: "License is already linked." };
-  }
-
   return { success: Boolean(result.success), username, message: String(result.message || "License registered") };
 }
 
@@ -140,6 +148,45 @@ function normalizeExpiry(value: unknown) {
   return numeric > 100000000000 ? numeric : numeric * 1000;
 }
 
+function normalizeUsedBy(value: unknown) {
+  const text = String(value ?? "").trim().toLowerCase();
+  if (!text || text === "-" || text === "n/a" || text === "none" || text === "unused") return "";
+  return text;
+}
+
+function daysFromTimeleft(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.max(0, Math.ceil(value / 86400));
+  }
+
+  const text = String(value ?? "").toLowerCase();
+  const dayMatch = text.match(/(\d+)\s*d/);
+  if (dayMatch) return Number(dayMatch[1]);
+
+  const hourMatch = text.match(/(\d+)\s*h/);
+  if (hourMatch) return Math.ceil(Number(hourMatch[1]) / 24);
+
+  return null;
+}
+
+async function getUserLicenseInfo(username: string, key: string, fallbackKey?: KeyRecord) {
+  const data = await keyAuthSellerRequest({ type: "userdata", user: username }) as UserDataResponse;
+  const firstSub = Array.isArray(data.subscriptions) ? data.subscriptions[0] : undefined;
+  const expires = normalizeExpiry(firstSub?.expiry ?? data.expires ?? data.expiry ?? fallbackKey?.expires ?? fallbackKey?.expiry);
+  const timeleftDays = daysFromTimeleft(firstSub?.timeleft);
+  const days = timeleftDays ?? (expires ? Math.max(0, Math.ceil((expires - Date.now()) / 86400000)) : null);
+
+  return {
+    key: maskKey(key),
+    status: "ACTIVE",
+    username,
+    level: fallbackKey?.level ?? 1,
+    expires,
+    days,
+    subscription: firstSub?.subscription ?? null
+  };
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     sendJson(res, 405, { success: false, message: "Method not allowed" });
@@ -161,24 +208,45 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const register = await registerLicenseToDiscord(license, String(session.discord.id));
-    if (!register.success) {
-      sendJson(res, 400, { success: false, message: register.message });
+    const username = `discord_${session.discord.id}`;
+    const keysBefore = await keyAuthSellerRequest({ type: "fetchallkeys", format: "JSON" });
+    const keyBefore = extractKeys(keysBefore).find((item) => String(item.key ?? "").trim() === license);
+
+    if (!keyBefore) {
+      sendJson(res, 404, { success: false, message: "License was not found." });
       return;
     }
 
-    const result = await keyAuthSellerRequest({ type: "fetchallkeys", format: "JSON" });
-    const match = extractKeys(result).find((item) => String(item.key ?? "").trim() === license);
-    const expires = normalizeExpiry(match?.expires ?? match?.expiry);
+    const currentOwner = normalizeUsedBy(keyBefore.usedby);
+    if (currentOwner && currentOwner !== normalizeUsedBy(username)) {
+      sendJson(res, 403, { success: false, message: "This license is already linked to another Discord account." });
+      return;
+    }
 
-    const licenseInfo = {
-      key: maskKey(license),
-      status: "ACTIVE",
-      username: register.username,
-      level: match?.level ?? 1,
-      expires,
-      days: expires ? Math.max(0, Math.ceil((expires - Date.now()) / 86400000)) : null
-    };
+    if (!currentOwner) {
+      const register = await registerLicenseToDiscord(license, String(session.discord.id));
+      if (!register.success) {
+        const keysAfterFailure = await keyAuthSellerRequest({ type: "fetchallkeys", format: "JSON" });
+        const keyAfterFailure = extractKeys(keysAfterFailure).find((item) => String(item.key ?? "").trim() === license);
+        const failedOwner = normalizeUsedBy(keyAfterFailure?.usedby);
+
+        if (failedOwner !== normalizeUsedBy(username)) {
+          sendJson(res, 400, { success: false, message: register.message });
+          return;
+        }
+      }
+    }
+
+    const keysAfter = await keyAuthSellerRequest({ type: "fetchallkeys", format: "JSON" });
+    const keyAfter = extractKeys(keysAfter).find((item) => String(item.key ?? "").trim() === license) ?? keyBefore;
+    const finalOwner = normalizeUsedBy(keyAfter.usedby);
+
+    if (finalOwner && finalOwner !== normalizeUsedBy(username)) {
+      sendJson(res, 403, { success: false, message: "This license is already linked to another Discord account." });
+      return;
+    }
+
+    const licenseInfo = await getUserLicenseInfo(username, license, keyAfter);
 
     session.license = licenseInfo;
     setSession(res, session);
