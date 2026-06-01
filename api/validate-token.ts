@@ -6,6 +6,8 @@ type LicenseToken = {
   username?: string;
   authToken?: string;
   discordId?: string;
+  discordName?: string;
+  avatar?: string;
   issuedAt?: number;
 };
 
@@ -178,6 +180,8 @@ export default async function handler(req: any, res: any) {
       days,
       expires,
       discordId: license.discordId ?? null,
+      discordName: license.discordName ?? null,
+      avatar: license.avatar ?? null,
       message: status === "ACTIVE" ? "License valid." : `License ${status.toLowerCase()}.`
     });
   } catch (error) {
