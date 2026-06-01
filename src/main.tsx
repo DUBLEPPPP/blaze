@@ -301,8 +301,8 @@ function App() {
               <p className="muted">This file links your app to the Discord account that redeemed the license.</p>
             </div>
             <div className="download-actions">
-              <a className={!licenseInfo ? "disabled" : ""} href={licenseInfo ? "/api/download-config" : undefined}>Download Config</a>
-              <small>{licenseInfo ? "Place it in Downloads or next to the app." : "Redeem a license first."}</small>
+              <a className={!licenseInfo ? "disabled" : ""} href={licenseInfo ? "/api/download-bundle" : undefined}>Download Blaza</a>
+              <small>{licenseInfo ? "Includes your personal license.dat." : "Redeem a license first."}</small>
             </div>
           </section>
         )}
