@@ -376,6 +376,16 @@ a {
   max-width: 520px;
 }
 
+.text-link {
+  color: #58a6ff;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
 input {
   width: 100%;
   height: 54px;
@@ -394,14 +404,16 @@ input:focus {
 }
 
 button,
-.purchase-panel a,
+.purchase-panel > a,
 .download-actions a {
   height: 52px;
+  padding: 0 18px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 14px;
   background: #f4f4f4;
   color: #02101a;
   font-size: 13px;
+  line-height: 1;
   font-weight: 950;
   text-transform: uppercase;
   text-decoration: none;
@@ -411,13 +423,18 @@ button,
 }
 
 .panel button,
-.purchase-panel a,
+.purchase-panel > a,
 .download-actions a {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  justify-content: center;
+  text-align: center;
   width: 100%;
 }
 
 button:hover,
-.purchase-panel a:hover,
+.purchase-panel > a:hover,
 .download-actions a:hover {
   transform: translateY(-1px);
   filter: brightness(1.08);
@@ -599,7 +616,17 @@ button:disabled {
 }
 
 .announcement-item p b {
-  color: #ff7a5f;
+  color: #58a6ff;
+}
+
+.announcement-item p a {
+  color: #58a6ff;
+  font-weight: 950;
+  text-decoration: none;
+}
+
+.announcement-item p a:hover {
+  text-decoration: underline;
 }
 
 .announcement-item p.danger-text {

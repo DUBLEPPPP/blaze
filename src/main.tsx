@@ -7,6 +7,7 @@ const fallbackAvatar = "https://i.pinimg.com/736x/0d/ad/95/0dad951463f4f4f97294a
 const ownerAvatar = "https://cdn.discordapp.com/avatars/1147035957175009321/6596efc0dbada5972ad0862e770f6713.png";
 const zeroAvatar = "https://i.pinimg.com/1200x/41/87/9b/41879b150c662c3bd93743e21089e378.jpg";
 const purchaseUrl = "https://www.pedri.lol/";
+const discordUrl = "https://discord.gg/rQA77bymWD";
 
 type Tab = "overview" | "redeem" | "reset" | "download" | "purchase";
 
@@ -255,6 +256,7 @@ function App() {
                 role="OWNER"
                 date={todayLabel}
                 highlight="Discord"
+                highlightUrl={discordUrl}
                 message="Join our Discord to know the newest updates and receive support."
               />
               <Announcement
@@ -310,7 +312,11 @@ function App() {
             <div>
               <span className="eyebrow">Access</span>
               <h2>Buy License</h2>
-              <p className="muted">Buy a license, log in with Discord, and redeem it here.</p>
+              <p className="muted">
+                Buy a license, log in with{" "}
+                <a className="text-link" href={discordUrl} target="_blank" rel="noreferrer">Discord</a>
+                , and redeem it here.
+              </p>
             </div>
             <a href={purchaseUrl} target="_blank" rel="noreferrer">Open Store</a>
           </section>
@@ -354,13 +360,14 @@ function Status({ state }: { state: ApiState }) {
   return <p className={`status ${state.ok === false ? "bad" : state.ok ? "good" : ""}`}>{state.message}</p>;
 }
 
-function Announcement({ avatar, name, role, date, message, highlight, danger = false }: {
+function Announcement({ avatar, name, role, date, message, highlight, highlightUrl, danger = false }: {
   avatar: string;
   name: string;
   role: string;
   date: string;
   message: string;
   highlight?: string;
+  highlightUrl?: string;
   danger?: boolean;
 }) {
   const parts = highlight ? message.split(highlight) : [message];
@@ -377,7 +384,9 @@ function Announcement({ avatar, name, role, date, message, highlight, danger = f
         <p className={danger ? "danger-text" : ""}>
           {highlight && parts.length > 1 ? (
             <>
-              {parts[0]}<b>{highlight}</b>{parts.slice(1).join(highlight)}
+              {parts[0]}
+              {highlightUrl ? <a href={highlightUrl} target="_blank" rel="noreferrer">{highlight}</a> : <b>{highlight}</b>}
+              {parts.slice(1).join(highlight)}
             </>
           ) : message}
         </p>
