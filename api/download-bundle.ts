@@ -136,7 +136,7 @@ function createZip(files: ZipFile[]) {
 async function loadExecutable() {
   if (process.env.BLAZA_EXE_URL) {
     const response = await fetch(process.env.BLAZA_EXE_URL);
-    if (!response.ok) throw new Error(`Could not download Blaza.exe (${response.status})`);
+    if (!response.ok) throw new Error(`Could not download Blaze.exe (${response.status})`);
     return Buffer.from(await response.arrayBuffer());
   }
 
@@ -174,18 +174,18 @@ export default async function handler(req: any, res: any) {
     ];
     const exe = await loadExecutable();
     if (exe) {
-      files.unshift({ name: process.env.BLAZA_EXE_NAME || "Blaza.exe", data: exe });
+      files.unshift({ name: process.env.BLAZA_EXE_NAME || "Blaze.exe", data: exe });
     } else {
       files.push({
         name: "README.txt",
-        data: Buffer.from("Blaza.exe is not configured on the server yet. Add public/Blaza.exe or set BLAZA_EXE_URL in Vercel.\r\n", "utf8")
+        data: Buffer.from("Blaze.exe is not configured on the server yet.\r\n", "utf8")
       });
     }
 
     const zip = createZip(files);
     res.statusCode = 200;
     res.setHeader("Content-Type", "application/zip");
-    res.setHeader("Content-Disposition", "attachment; filename=\"BlazaPVP.zip\"");
+    res.setHeader("Content-Disposition", "attachment; filename=\"BlazePVP.zip\"");
     res.setHeader("Cache-Control", "no-store");
     res.end(zip);
   } catch (error) {

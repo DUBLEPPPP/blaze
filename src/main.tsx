@@ -211,7 +211,7 @@ function App() {
   return (
     <main className="dashboard-shell">
       <aside className="side-nav">
-        <div className="side-brand"><img src={logoUrl} alt="Blaza logo" /><span>BLAZA</span></div>
+        <div className="side-brand"><img src={logoUrl} alt="Blaze logo" /><span>BLAZE</span></div>
         <div className="nav-card">
           {navItems.map((item) => (
             <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}>
@@ -226,7 +226,7 @@ function App() {
       <section className="content-shell">
         <header className="content-header">
           <div>
-            <span className="eyebrow">Blaza PVP</span>
+            <span className="eyebrow">Blaze PVP</span>
             <h1>{navItems.find((item) => item.id === tab)?.label}</h1>
           </div>
           <div className="header-user">
@@ -247,7 +247,6 @@ function App() {
             </article>
             <InfoCard label="Rank" value={rank} premium={rank === "PREMIUM"} />
             <InfoCard label="License" value={licenseStatus} subValue={licenseInfo && licenseStatus === "ACTIVE" ? daysText : licenseInfo ? "Contact support" : "Redeem a key"} danger={licenseDanger} />
-            <InfoCard label="Config" value={licenseInfo ? "READY" : "LOCKED"} subValue={licenseInfo ? "Download enabled" : "License required"} danger={!licenseInfo} />
             <section className="announcements-panel">
               <span className="eyebrow">Announcements</span>
               <Announcement
@@ -296,13 +295,14 @@ function App() {
         {tab === "download" && (
           <section className="download-panel">
             <div>
-              <span className="eyebrow">Software Config</span>
-              <h2>Download License Config</h2>
-              <p className="muted">This file links your app to the Discord account that redeemed the license.</p>
+              <span className="eyebrow">Download</span>
+              <h2>Blaze Launcher</h2>
+              <p className="muted">Launcher oficial de Blaze.</p>
+              <span className="update-badge">Actualizada</span>
             </div>
             <div className="download-actions">
-              <a className={!licenseInfo ? "disabled" : ""} href={licenseInfo ? "/api/download-bundle" : undefined}>Download Blaza</a>
-              <small>{licenseInfo ? "Includes your personal license.dat." : "Redeem a license first."}</small>
+              <a className={!licenseInfo ? "disabled" : ""} href={licenseInfo ? "/api/download-bundle" : undefined}>Download Blaze</a>
+              <small>{licenseInfo ? "Launcher listo para descargar." : "Redeem a license first."}</small>
             </div>
           </section>
         )}
@@ -333,8 +333,8 @@ function LoginPage() {
     <main className="login-page">
       <div className="login-bg" />
       <section className="login-card">
-        <div className="brand-mark"><img src={logoUrl} alt="Blaza logo" /></div>
-        <h1>Sign in to <span>Blaza</span></h1>
+        <div className="brand-mark"><img src={logoUrl} alt="Blaze logo" /></div>
+        <h1>Sign in to <span>Blaze</span></h1>
         <p>Secure access for license management, downloads, and account recovery.</p>
         <a className="discord-button" href="/api/discord-login">Login with Discord</a>
         <div className="secure-row"><span />Secure Authentication<span /></div>

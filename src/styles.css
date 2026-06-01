@@ -496,6 +496,22 @@ button:disabled {
   line-height: 1.4;
 }
 
+.update-badge {
+  display: inline-grid;
+  place-items: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid rgba(62, 255, 116, 0.30);
+  border-radius: 999px;
+  color: #3eff74;
+  background: rgba(62, 255, 116, 0.08);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 22px rgba(62, 255, 116, 0.10);
+}
+
 .eyebrow {
   display: inline-block;
   color: #f4f4f4;
