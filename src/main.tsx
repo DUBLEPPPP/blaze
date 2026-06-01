@@ -5,7 +5,7 @@ import "./styles.css";
 const fallbackAvatar = "https://i.pinimg.com/736x/0d/ad/95/0dad951463f4f4f97294a7a976946b64.jpg";
 const purchaseUrl = "https://www.pedri.lol/";
 
-type Tab = "profile" | "settings" | "download" | "purchase";
+type Tab = "overview" | "redeem" | "reset" | "download" | "purchase";
 
 type DiscordProfile = {
   id: string;
@@ -35,6 +35,14 @@ type ApiState = {
   ok: boolean | null;
 };
 
+const navItems: Array<{ id: Tab; icon: string; label: string }> = [
+  { id: "overview", icon: "◎", label: "Overview" },
+  { id: "redeem", icon: "◇", label: "Redeem Code" },
+  { id: "reset", icon: "↻", label: "HWID Reset" },
+  { id: "download", icon: "↓", label: "Download" },
+  { id: "purchase", icon: "✦", label: "Purchase" }
+];
+
 async function readApiJson(response: Response) {
   const text = await response.text();
   try {
@@ -45,7 +53,7 @@ async function readApiJson(response: Response) {
 }
 
 function App() {
-  const [tab, setTab] = useState<Tab>("profile");
+  const [tab, setTab] = useState<Tab>("overview");
   const [session, setSession] = useState<Session | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
   const [license, setLicense] = useState("");
@@ -129,81 +137,95 @@ function App() {
   const avatar = session.discord.avatar || fallbackAvatar;
 
   return (
-    <main className="page-shell">
+    <main className="dashboard-shell">
       <div className="ambient ambient-one" />
       <div className="ambient ambient-two" />
 
-      <nav className="top-nav" aria-label="Main navigation">
-        <button className={tab === "profile" ? "active" : ""} onClick={() => setTab("profile")}>Profile</button>
-        <button className={tab === "settings" ? "active" : ""} onClick={() => setTab("settings")}>Settings</button>
-        <button className={tab === "download" ? "active" : ""} onClick={() => setTab("download")}>Download</button>
-        <button className={tab === "purchase" ? "active" : ""} onClick={() => setTab("purchase")}>Purchase</button>
-        <a href="/api/logout">Logout</a>
-      </nav>
-
-      <section className="hero-card">
-        <div className="hero-media" />
-        <div className="hero-overlay" />
-        <img className="avatar" src={avatar} alt="Profile avatar" />
-        <div className="hero-copy">
-          {licenseStatus !== "ACTIVE" && <span className="expired-dot">No active license</span>}
-          <h1>/{session.discord.name}'s</h1>
+      <aside className="side-nav">
+        <div className="side-brand">BLAZA</div>
+        <div className="nav-card">
+          {navItems.map((item) => (
+            <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}>
+              <span>{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
         </div>
-      </section>
+        <a className="logout-card" href="/api/logout">Logout</a>
+      </aside>
 
-      {tab === "profile" && (
-        <section className="grid profile-grid">
-          <InfoCard label="Discord ID" value={session.discord.id} />
-          <InfoCard label="Rank" value={rank} premium={rank === "PREMIUM"} />
-          <InfoCard label="License" value={licenseStatus} subValue={licenseInfo ? daysText : "Redeem a key"} danger={licenseStatus !== "ACTIVE"} />
-        </section>
-      )}
+      <section className="content-shell">
+        <header className="content-header">
+          <div>
+            <span className="eyebrow">Blaza PVP</span>
+            <h1>{navItems.find((item) => item.id === tab)?.label}</h1>
+          </div>
+          <div className="header-user">
+            <span>{rank}</span>
+            <img src={avatar} alt="Profile avatar" />
+          </div>
+        </header>
 
-      {tab === "settings" && (
-        <section className="grid settings-grid">
-          <div className="panel">
+        {tab === "overview" && (
+          <section className="overview-grid">
+            <article className="profile-panel">
+              <img src={avatar} alt="Profile avatar" />
+              <div>
+                <span>{rank}</span>
+                <h2>{session.discord.name}</h2>
+                <p>Discord ID: {session.discord.id}</p>
+              </div>
+            </article>
+            <InfoCard label="Rank" value={rank} premium={rank === "PREMIUM"} />
+            <InfoCard label="License" value={licenseStatus} subValue={licenseInfo ? daysText : "Redeem a key"} danger={licenseStatus !== "ACTIVE"} />
+            <InfoCard label="Config" value={licenseInfo ? "READY" : "LOCKED"} subValue={licenseInfo ? "Download enabled" : "License required"} danger={!licenseInfo} />
+          </section>
+        )}
+
+        {tab === "redeem" && (
+          <section className="panel form-panel">
             <h2>Redeem License</h2>
             <p className="muted">Your key will be linked to this Discord account.</p>
             <input value={license} onChange={(event) => setLicense(event.target.value)} placeholder="blaze-xxxx-xxxx-xxxx" />
             <button onClick={redeemLicense} disabled={redeemState.loading}>{redeemState.loading ? "Linking..." : "Redeem License"}</button>
             <Status state={redeemState} />
-          </div>
+          </section>
+        )}
 
-          <div className="panel">
+        {tab === "reset" && (
+          <section className="panel form-panel">
             <h2>HWID Reset</h2>
             <p className="muted">Reset the PC lock for the license linked to your Discord account.</p>
             <button onClick={resetHwid} disabled={resetState.loading || !licenseInfo}>{resetState.loading ? "Resetting..." : "Reset HWID"}</button>
             <Status state={resetState} />
-          </div>
-        </section>
-      )}
+          </section>
+        )}
 
-      {tab === "download" && (
-        <section className="download-panel">
-          <div>
-            <span className="eyebrow">Blaza PVP</span>
-            <h2>Download Config</h2>
-            <p className="muted">
-              This file links your app to the Discord account that redeemed the license.
-            </p>
-          </div>
-          <div className="download-actions">
-            <a className={!licenseInfo ? "disabled" : ""} href={licenseInfo ? "/api/download-config" : undefined}>Download License Config</a>
-            <small>{licenseInfo ? "Use this file with the app login system." : "Redeem a license first."}</small>
-          </div>
-        </section>
-      )}
+        {tab === "download" && (
+          <section className="download-panel">
+            <div>
+              <span className="eyebrow">Software Config</span>
+              <h2>Download License Config</h2>
+              <p className="muted">This file links your app to the Discord account that redeemed the license.</p>
+            </div>
+            <div className="download-actions">
+              <a className={!licenseInfo ? "disabled" : ""} href={licenseInfo ? "/api/download-config" : undefined}>Download Config</a>
+              <small>{licenseInfo ? "Place it in Downloads or next to the app." : "Redeem a license first."}</small>
+            </div>
+          </section>
+        )}
 
-      {tab === "purchase" && (
-        <section className="purchase-panel">
-          <div>
-            <span className="eyebrow">Blaza PVP</span>
-            <h2>Get Access</h2>
-            <p className="muted">Buy a license, log in with Discord, and redeem it here.</p>
-          </div>
-          <a href={purchaseUrl} target="_blank" rel="noreferrer">Buy License</a>
-        </section>
-      )}
+        {tab === "purchase" && (
+          <section className="purchase-panel">
+            <div>
+              <span className="eyebrow">Access</span>
+              <h2>Buy License</h2>
+              <p className="muted">Buy a license, log in with Discord, and redeem it here.</p>
+            </div>
+            <a href={purchaseUrl} target="_blank" rel="noreferrer">Open Store</a>
+          </section>
+        )}
+      </section>
     </main>
   );
 }
