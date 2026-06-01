@@ -1,4 +1,4 @@
-import { json, keyAuthSellerRequest, normalizeLicenseKey, readBody } from "../src/server/keyauth";
+import { json, keyAuthSellerRequest, normalizeLicenseKey, readBody } from "../lib/keyauth";
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {

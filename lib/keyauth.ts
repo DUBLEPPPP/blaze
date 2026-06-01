@@ -1,8 +1,4 @@
-import https from "node:https";
-
 type KeyAuthResponse = Record<string, unknown>;
-
-const sellerKey = process.env.KEYAUTH_SELLER_KEY;
 
 export function json(res: any, status: number, body: unknown) {
   res.statusCode = status;
@@ -11,9 +7,10 @@ export function json(res: any, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
-export function requireSellerKey() {
+function requireSellerKey() {
+  const sellerKey = process.env.KEYAUTH_SELLER_KEY;
   if (!sellerKey) {
-    throw new Error("KEYAUTH_SELLER_KEY is not configured");
+    throw new Error("KEYAUTH_SELLER_KEY is not configured in Vercel.");
   }
   return sellerKey;
 }
@@ -43,31 +40,23 @@ export function readBody(req: any): Promise<any> {
   });
 }
 
-export function keyAuthSellerRequest(params: Record<string, string>): Promise<KeyAuthResponse> {
+export async function keyAuthSellerRequest(params: Record<string, string>): Promise<KeyAuthResponse> {
   const query = new URLSearchParams({
     sellerkey: requireSellerKey(),
     ...params
   });
 
-  const url = `https://keyauth.win/api/seller/?${query.toString()}`;
-
-  return new Promise((resolve, reject) => {
-    https
-      .get(url, (response) => {
-        let data = "";
-        response.on("data", (chunk) => {
-          data += chunk.toString("utf8");
-        });
-        response.on("end", () => {
-          try {
-            resolve(JSON.parse(data));
-          } catch {
-            reject(new Error("Invalid KeyAuth response"));
-          }
-        });
-      })
-      .on("error", reject);
+  const response = await fetch(`https://keyauth.win/api/seller/?${query.toString()}`, {
+    method: "GET",
+    headers: { "Accept": "application/json" }
   });
+
+  const text = await response.text();
+  try {
+    return JSON.parse(text) as KeyAuthResponse;
+  } catch {
+    throw new Error(`Invalid KeyAuth response (${response.status}): ${text.slice(0, 160)}`);
+  }
 }
 
 export function normalizeLicenseKey(value: unknown) {
