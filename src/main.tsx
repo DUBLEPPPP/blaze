@@ -4,6 +4,8 @@ import "./styles.css";
 import logoUrl from "./asset/logo.png";
 
 const fallbackAvatar = "https://i.pinimg.com/736x/0d/ad/95/0dad951463f4f4f97294a7a976946b64.jpg";
+const ownerAvatar = "https://cdn.discordapp.com/avatars/1147035957175009321/6596efc0dbada5972ad0862e770f6713.png";
+const zeroAvatar = "https://i.pinimg.com/1200x/41/87/9b/41879b150c662c3bd93743e21089e378.jpg";
 const purchaseUrl = "https://www.pedri.lol/";
 
 type Tab = "overview" | "redeem" | "reset" | "download" | "purchase";
@@ -126,6 +128,11 @@ function App() {
     ? "Lifetime / Unknown"
     : `${licenseInfo.days} days left`;
   const licenseDanger = licenseStatus !== "ACTIVE";
+  const todayLabel = new Intl.DateTimeFormat("en-US", {
+    month: "numeric",
+    day: "numeric",
+    year: "numeric"
+  }).format(new Date());
 
   async function redeemLicense() {
     setRedeemState({ loading: true, message: "Linking license...", ok: null });
@@ -240,6 +247,25 @@ function App() {
             <InfoCard label="Rank" value={rank} premium={rank === "PREMIUM"} />
             <InfoCard label="License" value={licenseStatus} subValue={licenseInfo && licenseStatus === "ACTIVE" ? daysText : licenseInfo ? "Contact support" : "Redeem a key"} danger={licenseDanger} />
             <InfoCard label="Config" value={licenseInfo ? "READY" : "LOCKED"} subValue={licenseInfo ? "Download enabled" : "License required"} danger={!licenseInfo} />
+            <section className="announcements-panel">
+              <span className="eyebrow">Announcements</span>
+              <Announcement
+                avatar={ownerAvatar}
+                name="/pedri.exe's"
+                role="OWNER"
+                date={todayLabel}
+                highlight="Discord"
+                message="Join our Discord to know the newest updates and receive support."
+              />
+              <Announcement
+                avatar={zeroAvatar}
+                name="zero.exe"
+                role="OWNER"
+                date={todayLabel}
+                message="Do not share your loader, as it contains your personal info, sharing will lead to account suspension."
+                danger
+              />
+            </section>
           </section>
         )}
 
@@ -326,6 +352,38 @@ function InfoCard({ label, value, subValue, danger = false, premium = false }: {
 function Status({ state }: { state: ApiState }) {
   if (!state.message) return null;
   return <p className={`status ${state.ok === false ? "bad" : state.ok ? "good" : ""}`}>{state.message}</p>;
+}
+
+function Announcement({ avatar, name, role, date, message, highlight, danger = false }: {
+  avatar: string;
+  name: string;
+  role: string;
+  date: string;
+  message: string;
+  highlight?: string;
+  danger?: boolean;
+}) {
+  const parts = highlight ? message.split(highlight) : [message];
+
+  return (
+    <article className="announcement-item">
+      <img src={avatar} alt={`${name} avatar`} />
+      <div>
+        <div className="announcement-meta">
+          <strong>{name}</strong>
+          <span>{role}</span>
+          <em>{date}</em>
+        </div>
+        <p className={danger ? "danger-text" : ""}>
+          {highlight && parts.length > 1 ? (
+            <>
+              {parts[0]}<b>{highlight}</b>{parts.slice(1).join(highlight)}
+            </>
+          ) : message}
+        </p>
+      </div>
+    </article>
+  );
 }
 
 function NavIcon({ type }: { type: Tab }) {

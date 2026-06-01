@@ -536,6 +536,76 @@ button:disabled {
   box-shadow: 0 0 38px rgba(255, 255, 255, 0.08);
 }
 
+.announcements-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 26px;
+  min-height: 240px;
+  padding: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 24px;
+  background: rgba(0, 0, 0, 0.90);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 24px 70px rgba(0, 0, 0, 0.30);
+  backdrop-filter: blur(18px);
+}
+
+.announcement-item {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.announcement-item img {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+
+.announcement-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 6px;
+}
+
+.announcement-meta strong {
+  color: #f4f4f4;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.announcement-meta span,
+.announcement-meta em {
+  color: #6e7780;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.announcement-meta span::before,
+.announcement-meta em::before {
+  content: "- ";
+}
+
+.announcement-item p {
+  margin: 0;
+  color: #a9b0b8;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
+.announcement-item p b {
+  color: #ff7a5f;
+}
+
+.announcement-item p.danger-text {
+  color: #ff7878;
+}
+
 .brand-mark img {
   width: 38px;
   height: 38px;
