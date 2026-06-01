@@ -1,4 +1,4 @@
-import { json, keyAuthSellerRequest, maskKey, normalizeLicenseKey, readBody } from "./_keyauth";
+import { json, keyAuthSellerRequest, maskKey, normalizeLicenseKey, readBody } from "../src/server/keyauth";
 
 type KeyRecord = {
   key?: string;

@@ -1,4 +1,4 @@
-import { json } from "./_keyauth";
+import { json } from "../src/server/keyauth";
 
 export default function handler(req: any, res: any) {
   json(res, 200, {
