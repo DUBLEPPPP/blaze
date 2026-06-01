@@ -58,6 +58,19 @@ function setSession(res: any, session: any) {
   res.setHeader("Set-Cookie", `blaze_session=${payload}.${sign(payload)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=604800`);
 }
 
+function normalizeDiscordMediaUrl(value: unknown) {
+  if (typeof value !== "string") return value;
+  if (!value.includes("cdn.discordapp.com/")) return value;
+  if (!value.match(/\/a_[^/.?]+\.png/i)) return value;
+  return value.replace(/\.png(\?size=\d+)?$/i, ".gif$1");
+}
+
+function normalizeDiscordMedia(session: any) {
+  if (!session?.discord) return;
+  session.discord.avatar = normalizeDiscordMediaUrl(session.discord.avatar);
+  session.discord.banner = normalizeDiscordMediaUrl(session.discord.banner);
+}
+
 async function keyAuthSellerRequest(params: Record<string, string>) {
   const sellerKey = process.env.KEYAUTH_SELLER_KEY;
   if (!sellerKey) return null;
@@ -160,6 +173,7 @@ export default async function handler(req: any, res: any) {
     }
 
     if (session.discord?.id) {
+      normalizeDiscordMedia(session);
       session.license = await findDiscordLicense(String(session.discord.id));
       setSession(res, session);
     }

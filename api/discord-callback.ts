@@ -26,9 +26,14 @@ function sign(payload: string) {
   return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
 }
 
+function discordAssetUrl(type: "avatars" | "banners", userId: string, hash: string, size: number) {
+  const extension = hash.startsWith("a_") ? "gif" : "png";
+  return `https://cdn.discordapp.com/${type}/${userId}/${hash}.${extension}?size=${size}`;
+}
+
 async function makeSession(user: DiscordUser) {
   const banner = user.banner
-    ? `https://cdn.discordapp.com/banners/${user.id}/${user.banner}.png?size=1024`
+    ? discordAssetUrl("banners", user.id, user.banner, 1024)
     : null;
 
   const payload = base64url(JSON.stringify({
@@ -37,7 +42,7 @@ async function makeSession(user: DiscordUser) {
       username: user.username,
       name: user.global_name || user.username,
       avatar: user.avatar
-        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128`
+        ? discordAssetUrl("avatars", user.id, user.avatar, 128)
         : `https://cdn.discordapp.com/embed/avatars/${Number(user.id) % 5}.png`,
       banner,
       accentColor: user.accent_color ?? null
