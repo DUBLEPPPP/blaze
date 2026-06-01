@@ -74,6 +74,17 @@ async function setLastResetMs(user: string, timestamp: number) {
   });
 }
 
+async function clearBoundHwid(user: string) {
+  await keyAuthSellerRequest({
+    type: "setvar",
+    user,
+    var: "blaza_bound_hwid",
+    data: "",
+    readonly: "false",
+    readOnly: "false"
+  });
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     sendJson(res, 405, { success: false, message: "Method not allowed" });
@@ -114,6 +125,7 @@ export default async function handler(req: any, res: any) {
     const result = await keyAuthSellerRequest({ type: "resetuser", user });
     if (result.success) {
       await setLastResetMs(user, now);
+      await clearBoundHwid(user);
     }
 
     sendJson(res, result.success ? 200 : 400, result);

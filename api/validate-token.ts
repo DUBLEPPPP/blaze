@@ -140,6 +140,34 @@ function normalizeStatus(key: KeyRecord, data: UserDataResponse | null, expires:
   return "ACTIVE";
 }
 
+function readKeyAuthVar(value: unknown) {
+  if (!value) return "";
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number") return String(value);
+  if (typeof value === "object") {
+    const data = value as Record<string, unknown>;
+    return readKeyAuthVar(data.response ?? data.value ?? data.data);
+  }
+  return "";
+}
+
+async function getBoundHwid(user: string) {
+  const result = await keyAuthSellerRequest({ type: "getvar", user, var: "blaza_bound_hwid" });
+  if (!result.success) return "";
+  return readKeyAuthVar(result.response);
+}
+
+async function setBoundHwid(user: string, hwid: string) {
+  await keyAuthSellerRequest({
+    type: "setvar",
+    user,
+    var: "blaza_bound_hwid",
+    data: hwid,
+    readonly: "false",
+    readOnly: "false"
+  });
+}
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     json(res, 405, { success: false, message: "Method not allowed" });
@@ -149,8 +177,14 @@ export default async function handler(req: any, res: any) {
   try {
     const body = await readBody(req);
     const token = String(body.token || "").trim();
+    const hwid = String(body.hwid || "").trim();
     if (!token) {
       json(res, 400, { success: false, message: "Missing token." });
+      return;
+    }
+
+    if (!hwid) {
+      json(res, 400, { success: false, message: "Missing HWID." });
       return;
     }
 
@@ -173,16 +207,38 @@ export default async function handler(req: any, res: any) {
     const timeleftDays = daysFromTimeleft(firstSub?.timeleft);
     const days = timeleftDays ?? (expires ? Math.max(0, Math.ceil((expires - Date.now()) / 86400000)) : null);
     const status = normalizeStatus(key, data, expires);
+    if (status !== "ACTIVE") {
+      json(res, 403, {
+        success: false,
+        status,
+        days,
+        expires,
+        message: `License ${status.toLowerCase()}.`
+      });
+      return;
+    }
 
-    json(res, status === "ACTIVE" ? 200 : 403, {
-      success: status === "ACTIVE",
+    const boundHwid = await getBoundHwid(license.username);
+    if (!boundHwid) {
+      await setBoundHwid(license.username, hwid);
+    } else if (boundHwid !== hwid) {
+      json(res, 403, {
+        success: false,
+        status: "HWID_MISMATCH",
+        message: "This license is already linked to another PC. Use HWID Reset from the web."
+      });
+      return;
+    }
+
+    json(res, 200, {
+      success: true,
       status,
       days,
       expires,
       discordId: license.discordId ?? null,
       discordName: license.discordName ?? null,
       avatar: license.avatar ?? null,
-      message: status === "ACTIVE" ? "License valid." : `License ${status.toLowerCase()}.`
+      message: "License valid."
     });
   } catch (error) {
     json(res, 403, {
