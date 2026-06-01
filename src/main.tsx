@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
+import logoUrl from "./asset/logo.png";
 
 const fallbackAvatar = "https://i.pinimg.com/736x/0d/ad/95/0dad951463f4f4f97294a7a976946b64.jpg";
 const purchaseUrl = "https://www.pedri.lol/";
@@ -37,6 +38,14 @@ type ApiState = {
   ok: boolean | null;
 };
 
+type ResetStatus = {
+  loading: boolean;
+  available: boolean;
+  pending: boolean;
+  daysLeft: number;
+  message: string;
+};
+
 const navItems: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Overview" },
   { id: "redeem", label: "Redeem Code" },
@@ -61,6 +70,13 @@ function App() {
   const [license, setLicense] = useState("");
   const [redeemState, setRedeemState] = useState<ApiState>({ loading: false, message: "", ok: null });
   const [resetState, setResetState] = useState<ApiState>({ loading: false, message: "", ok: null });
+  const [resetStatus, setResetStatus] = useState<ResetStatus>({
+    loading: true,
+    available: false,
+    pending: false,
+    daysLeft: 0,
+    message: "Checking reset status..."
+  });
 
   useEffect(() => {
     fetch("/api/me")
@@ -73,6 +89,31 @@ function App() {
       })
       .finally(() => setLoadingSession(false));
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+
+    fetch("/api/reset-status")
+      .then(readApiJson)
+      .then((data) => {
+        setResetStatus({
+          loading: false,
+          available: Boolean(data.available),
+          pending: Boolean(data.pending),
+          daysLeft: Number(data.daysLeft || 0),
+          message: data.message || "HWID reset status loaded."
+        });
+      })
+      .catch((error) => {
+        setResetStatus({
+          loading: false,
+          available: false,
+          pending: false,
+          daysLeft: 0,
+          message: error instanceof Error ? error.message : "Could not load reset status."
+        });
+      });
+  }, [session]);
 
   const licenseInfo = session?.license || null;
   const licenseStatus = useMemo(() => {
@@ -119,6 +160,23 @@ function App() {
       });
       const data = await readApiJson(response);
       setResetState({ loading: false, message: data.message || "Done", ok: Boolean(data.success) });
+      if (data.success) {
+        setResetStatus({
+          loading: false,
+          available: false,
+          pending: true,
+          daysLeft: 30,
+          message: "HWID reset completed. Next reset available in 30 days."
+        });
+      } else if (data.cooldown) {
+        setResetStatus({
+          loading: false,
+          available: false,
+          pending: true,
+          daysLeft: Number(data.daysLeft || 0),
+          message: data.message || "HWID reset is on cooldown."
+        });
+      }
     } catch (error) {
       setResetState({
         loading: false,
@@ -144,7 +202,7 @@ function App() {
   return (
     <main className="dashboard-shell">
       <aside className="side-nav">
-        <div className="side-brand">BLAZA</div>
+        <div className="side-brand"><img src={logoUrl} alt="Blaza logo" /><span>BLAZA</span></div>
         <div className="nav-card">
           {navItems.map((item) => (
             <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}>
@@ -197,8 +255,11 @@ function App() {
         {tab === "reset" && (
           <section className="panel form-panel">
             <h2>HWID Reset</h2>
-            <p className="muted">Reset the PC lock for the license linked to your Discord account.</p>
-            <button onClick={resetHwid} disabled={resetState.loading || !licenseInfo}>{resetState.loading ? "Resetting..." : "Reset HWID"}</button>
+            <div className={resetStatus.pending ? "reset-box pending" : "reset-box"}>
+              <strong>{resetStatus.loading ? "Checking..." : resetStatus.available ? "Reset available" : resetStatus.pending ? "Pending" : "Locked"}</strong>
+              <p>{resetStatus.pending ? `You must wait ${resetStatus.daysLeft} day${resetStatus.daysLeft === 1 ? "" : "s"} before resetting again.` : resetStatus.message}</p>
+            </div>
+            <button onClick={resetHwid} disabled={resetState.loading || !licenseInfo || !resetStatus.available}>{resetState.loading ? "Resetting..." : "Reset HWID"}</button>
             <Status state={resetState} />
           </section>
         )}
@@ -239,9 +300,9 @@ function LoginPage() {
     <main className="login-page">
       <div className="login-bg" />
       <section className="login-card">
-        <div className="brand-mark">B</div>
+        <div className="brand-mark"><img src={logoUrl} alt="Blaza logo" /></div>
         <h1>Sign in to <span>Blaza</span></h1>
-        <p>Access your dashboard to manage your license, reset HWID, and view premium status.</p>
+        <p>Secure access for license management, downloads, and account recovery.</p>
         <a className="discord-button" href="/api/discord-login">Login with Discord</a>
         <div className="secure-row"><span />Secure Authentication<span /></div>
         <p className="fine-print">No password required. Discord OAuth2 only.</p>

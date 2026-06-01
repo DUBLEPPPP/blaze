@@ -57,29 +57,7 @@ function readResetTimestamp(value: unknown) {
   return 0;
 }
 
-async function getLastResetMs(user: string) {
-  const result = await keyAuthSellerRequest({ type: "getvar", user, var: "hwid_last_reset" });
-  if (!result.success) return 0;
-  return readResetTimestamp(result.response);
-}
-
-async function setLastResetMs(user: string, timestamp: number) {
-  await keyAuthSellerRequest({
-    type: "setvar",
-    user,
-    var: "hwid_last_reset",
-    data: String(timestamp),
-    readonly: "false",
-    readOnly: "false"
-  });
-}
-
 export default async function handler(req: any, res: any) {
-  if (req.method !== "POST") {
-    sendJson(res, 405, { success: false, message: "Method not allowed" });
-    return;
-  }
-
   try {
     const session = readSession(req);
     const user = String(session?.license?.username || "");
@@ -90,37 +68,30 @@ export default async function handler(req: any, res: any) {
     }
 
     if (!user) {
-      sendJson(res, 400, { success: false, message: "Redeem a license before resetting HWID." });
+      sendJson(res, 200, { success: true, available: false, message: "Redeem a license first." });
       return;
     }
 
+    const result = await keyAuthSellerRequest({ type: "getvar", user, var: "hwid_last_reset" });
+    const lastReset = result.success ? readResetTimestamp(result.response) : 0;
     const now = Date.now();
-    const cooldownMs = 30 * 24 * 60 * 60 * 1000;
-    const lastReset = await getLastResetMs(user);
-    const nextResetAt = lastReset > 0 ? lastReset + cooldownMs : 0;
+    const nextResetAt = lastReset > 0 ? lastReset + (30 * 24 * 60 * 60 * 1000) : 0;
+    const available = !nextResetAt || nextResetAt <= now;
+    const daysLeft = available ? 0 : Math.ceil((nextResetAt - now) / 86400000);
 
-    if (nextResetAt > now) {
-      const daysLeft = Math.ceil((nextResetAt - now) / 86400000);
-      sendJson(res, 429, {
-        success: false,
-        cooldown: true,
-        daysLeft,
-        nextResetAt,
-        message: `You must wait ${daysLeft} day${daysLeft === 1 ? "" : "s"} before resetting HWID again.`
-      });
-      return;
-    }
-
-    const result = await keyAuthSellerRequest({ type: "resetuser", user });
-    if (result.success) {
-      await setLastResetMs(user, now);
-    }
-
-    sendJson(res, result.success ? 200 : 400, result);
+    sendJson(res, 200, {
+      success: true,
+      available,
+      pending: !available,
+      lastReset,
+      nextResetAt,
+      daysLeft,
+      message: available ? "HWID reset is available." : `Wait ${daysLeft} day${daysLeft === 1 ? "" : "s"} before resetting again.`
+    });
   } catch (error) {
     sendJson(res, 500, {
       success: false,
-      message: error instanceof Error ? error.message : "Reset failed"
+      message: error instanceof Error ? error.message : "Could not load reset status"
     });
   }
 }
