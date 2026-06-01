@@ -151,6 +151,26 @@ function readKeyAuthVar(value: unknown) {
   return "";
 }
 
+function readResetTimestamp(value: unknown) {
+  const raw = readKeyAuthVar(value);
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseBoundHwid(value: string) {
+  if (!value) return { hwid: "", boundAt: 0 };
+
+  try {
+    const parsed = JSON.parse(value) as { hwid?: unknown; boundAt?: unknown };
+    return {
+      hwid: String(parsed.hwid || "").trim(),
+      boundAt: Number(parsed.boundAt || 0)
+    };
+  } catch {
+    return { hwid: value.trim(), boundAt: 0 };
+  }
+}
+
 async function getBoundHwid(user: string) {
   const result = await keyAuthSellerRequest({ type: "getvar", user, var: "blaza_bound_hwid" });
   if (!result.success) return "";
@@ -162,10 +182,16 @@ async function setBoundHwid(user: string, hwid: string) {
     type: "setvar",
     user,
     var: "blaza_bound_hwid",
-    data: hwid,
+    data: JSON.stringify({ hwid, boundAt: Date.now() }),
     readonly: "false",
     readOnly: "false"
   });
+}
+
+async function getLastResetMs(user: string) {
+  const result = await keyAuthSellerRequest({ type: "getvar", user, var: "hwid_last_reset" });
+  if (!result.success) return 0;
+  return readResetTimestamp(result.response);
 }
 
 export default async function handler(req: any, res: any) {
@@ -218,16 +244,21 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const boundHwid = await getBoundHwid(license.username);
-    if (!boundHwid) {
+    const bound = parseBoundHwid(await getBoundHwid(license.username));
+    if (!bound.hwid) {
       await setBoundHwid(license.username, hwid);
-    } else if (boundHwid !== hwid) {
+    } else if (bound.hwid !== hwid) {
+      const lastReset = await getLastResetMs(license.username);
+      if (lastReset > bound.boundAt) {
+        await setBoundHwid(license.username, hwid);
+      } else {
       json(res, 403, {
         success: false,
         status: "HWID_MISMATCH",
         message: "This license is already linked to another PC. Use HWID Reset from the web."
       });
       return;
+      }
     }
 
     json(res, 200, {
