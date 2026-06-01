@@ -92,9 +92,13 @@ async function keyAuthSellerRequest(params: Record<string, string>) {
 }
 
 async function keyAuthAppRequest(params: Record<string, string>) {
-  const name = process.env.KEYAUTH_APP_NAME || "blaze";
-  const ownerid = process.env.KEYAUTH_OWNER_ID || "EXhIuzzp52";
-  const ver = process.env.KEYAUTH_VERSION || "1.0";
+  const name = process.env.KEYAUTH_APP_NAME;
+  const ownerid = process.env.KEYAUTH_OWNER_ID;
+  const ver = process.env.KEYAUTH_VERSION;
+  if (!name || !ownerid || !ver) {
+    throw new Error("KeyAuth app settings are not configured in Vercel.");
+  }
+
   const query = new URLSearchParams({ name, ownerid, ver, ...params });
   const response = await fetch(`https://keyauth.win/api/1.3/?${query.toString()}`);
   const text = await response.text();
