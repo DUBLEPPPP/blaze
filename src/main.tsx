@@ -5,7 +5,7 @@ import "./styles.css";
 const fallbackAvatar = "https://i.pinimg.com/736x/0d/ad/95/0dad951463f4f4f97294a7a976946b64.jpg";
 const purchaseUrl = "https://www.pedri.lol/";
 
-type Tab = "profile" | "settings" | "purchase";
+type Tab = "profile" | "settings" | "download" | "purchase";
 
 type DiscordProfile = {
   id: string;
@@ -21,6 +21,7 @@ type LicenseInfo = {
   level?: number | string;
   expires?: number | null;
   days?: number | null;
+  authToken?: string;
 };
 
 type Session = {
@@ -135,6 +136,7 @@ function App() {
       <nav className="top-nav" aria-label="Main navigation">
         <button className={tab === "profile" ? "active" : ""} onClick={() => setTab("profile")}>Profile</button>
         <button className={tab === "settings" ? "active" : ""} onClick={() => setTab("settings")}>Settings</button>
+        <button className={tab === "download" ? "active" : ""} onClick={() => setTab("download")}>Download</button>
         <button className={tab === "purchase" ? "active" : ""} onClick={() => setTab("purchase")}>Purchase</button>
         <a href="/api/logout">Logout</a>
       </nav>
@@ -172,6 +174,22 @@ function App() {
             <p className="muted">Reset the PC lock for the license linked to your Discord account.</p>
             <button onClick={resetHwid} disabled={resetState.loading || !licenseInfo}>{resetState.loading ? "Resetting..." : "Reset HWID"}</button>
             <Status state={resetState} />
+          </div>
+        </section>
+      )}
+
+      {tab === "download" && (
+        <section className="download-panel">
+          <div>
+            <span className="eyebrow">Blaza PVP</span>
+            <h2>Download Config</h2>
+            <p className="muted">
+              This file links your app to the Discord account that redeemed the license.
+            </p>
+          </div>
+          <div className="download-actions">
+            <a className={!licenseInfo ? "disabled" : ""} href={licenseInfo ? "/api/download-config" : undefined}>Download License Config</a>
+            <small>{licenseInfo ? "Use this file with the app login system." : "Redeem a license first."}</small>
           </div>
         </section>
       )}

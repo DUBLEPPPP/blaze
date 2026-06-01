@@ -106,13 +106,17 @@ async function keyAuthAppRequest(params: Record<string, string>) {
   }
 }
 
+function createAppPassword(license: string, discordId: string) {
+  return crypto.createHash("sha256").update(`${discordId}:${license}`).digest("hex").slice(0, 32);
+}
+
 async function registerLicenseToDiscord(license: string, discordId: string) {
   const username = `discord_${discordId}`;
-  const password = crypto.createHash("sha256").update(`${discordId}:${license}`).digest("hex").slice(0, 32);
+  const password = createAppPassword(license, discordId);
   const init = await keyAuthAppRequest({ type: "init" });
 
   if (!init.success || !init.sessionid) {
-    return { success: false, username, message: String(init.message || "KeyAuth init failed") };
+    return { success: false, username, password, message: String(init.message || "KeyAuth init failed") };
   }
 
   const result = await keyAuthAppRequest({
@@ -124,7 +128,7 @@ async function registerLicenseToDiscord(license: string, discordId: string) {
     hwid: `DISCORD-${discordId}`
   });
 
-  return { success: Boolean(result.success), username, message: String(result.message || "License registered") };
+  return { success: Boolean(result.success), username, password, message: String(result.message || "License registered") };
 }
 
 function extractKeys(value: unknown): KeyRecord[] {
@@ -169,7 +173,7 @@ function daysFromTimeleft(value: unknown) {
   return null;
 }
 
-async function getUserLicenseInfo(username: string, key: string, fallbackKey?: KeyRecord) {
+async function getUserLicenseInfo(username: string, key: string, authToken: string, fallbackKey?: KeyRecord) {
   const data = await keyAuthSellerRequest({ type: "userdata", user: username }) as UserDataResponse;
   const firstSub = Array.isArray(data.subscriptions) ? data.subscriptions[0] : undefined;
   const expires = normalizeExpiry(firstSub?.expiry ?? data.expires ?? data.expiry ?? fallbackKey?.expires ?? fallbackKey?.expiry);
@@ -180,6 +184,7 @@ async function getUserLicenseInfo(username: string, key: string, fallbackKey?: K
     key: maskKey(key),
     status: "ACTIVE",
     username,
+    authToken,
     level: fallbackKey?.level ?? 1,
     expires,
     days,
@@ -209,6 +214,7 @@ export default async function handler(req: any, res: any) {
     }
 
     const username = `discord_${session.discord.id}`;
+    const authToken = createAppPassword(license, String(session.discord.id));
     const keysBefore = await keyAuthSellerRequest({ type: "fetchallkeys", format: "JSON" });
     const keyBefore = extractKeys(keysBefore).find((item) => String(item.key ?? "").trim() === license);
 
@@ -246,7 +252,7 @@ export default async function handler(req: any, res: any) {
       return;
     }
 
-    const licenseInfo = await getUserLicenseInfo(username, license, keyAfter);
+    const licenseInfo = await getUserLicenseInfo(username, license, authToken, keyAfter);
 
     session.license = licenseInfo;
     setSession(res, session);

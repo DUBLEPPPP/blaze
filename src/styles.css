@@ -442,7 +442,8 @@ button,
   color: #ff626c;
 }
 
-.purchase-panel {
+.purchase-panel,
+.download-panel {
   display: grid;
   grid-template-columns: 1fr 240px;
   align-items: center;
@@ -453,11 +454,40 @@ button,
   padding: 42px;
 }
 
-.purchase-panel a {
+.purchase-panel a,
+.download-actions a {
   display: grid;
   place-items: center;
   background: #ff7047;
   color: #050505;
+}
+
+.download-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.download-actions a {
+  height: 54px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 950;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.download-actions a.disabled {
+  pointer-events: none;
+  opacity: 0.45;
+  background: rgba(255, 255, 255, 0.08);
+  color: #777;
+}
+
+.download-actions small {
+  color: #777;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .eyebrow {
@@ -513,7 +543,8 @@ button,
     grid-template-columns: 1fr;
   }
 
-  .purchase-panel {
+  .purchase-panel,
+  .download-panel {
     padding: 30px;
   }
 }
