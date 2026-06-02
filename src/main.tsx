@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./styles.css";
 import logoUrl from "./asset/logo.png";
@@ -8,8 +8,9 @@ const ownerAvatar = "https://cdn.discordapp.com/avatars/1147035957175009321/6596
 const zeroAvatar = "https://i.pinimg.com/1200x/41/87/9b/41879b150c662c3bd93743e21089e378.jpg";
 const purchaseUrl = "https://www.pedri.lol/";
 const discordUrl = "https://discord.gg/rQA77bymWD";
+const adminDiscordId = "1147035957175009321";
 
-type Tab = "overview" | "redeem" | "reset" | "download" | "purchase";
+type Tab = "overview" | "redeem" | "reset" | "download" | "purchase" | "admin";
 
 type DiscordProfile = {
   id: string;
@@ -49,12 +50,19 @@ type ResetStatus = {
   message: string;
 };
 
+type VersionInfo = {
+  version: string;
+  updatedAt?: string | null;
+  notes?: string;
+};
+
 const navItems: Array<{ id: Tab; label: string }> = [
   { id: "overview", label: "Overview" },
   { id: "redeem", label: "Redeem Code" },
   { id: "reset", label: "HWID Reset" },
   { id: "download", label: "Download" },
-  { id: "purchase", label: "Purchase" }
+  { id: "purchase", label: "Purchase" },
+  { id: "admin", label: "Admin" }
 ];
 
 async function readApiJson(response: Response) {
@@ -80,6 +88,11 @@ function App() {
     daysLeft: 0,
     message: "Checking reset status..."
   });
+  const [versionInfo, setVersionInfo] = useState<VersionInfo>({ version: "1.0.0" });
+  const [adminVersion, setAdminVersion] = useState("1.0.1");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [adminFile, setAdminFile] = useState<File | null>(null);
+  const [adminState, setAdminState] = useState<ApiState>({ loading: false, message: "", ok: null });
 
   useEffect(() => {
     fetch("/api/me")
@@ -117,6 +130,14 @@ function App() {
         });
       });
   }, [session]);
+
+  
+  useEffect(() => {
+    fetch("/api/version")
+      .then(readApiJson)
+      .then((data) => setVersionInfo({ version: String(data.version || "1.0.0"), updatedAt: data.updatedAt || null, notes: data.notes || "" }))
+      .catch(() => setVersionInfo({ version: "1.0.0" }));
+  }, []);
 
   const licenseInfo = session?.license || null;
   const licenseStatus = useMemo(() => {
@@ -156,6 +177,40 @@ function App() {
         message: error instanceof Error ? error.message : "Could not contact the API.",
         ok: false
       });
+    }
+  }
+
+  function fileToBase64(file: File) {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const value = String(reader.result || "");
+        resolve(value.includes(",") ? value.split(",").pop() || "" : value);
+      };
+      reader.onerror = () => reject(new Error("Could not read selected file."));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadAdminUpdate() {
+    if (!adminFile) {
+      setAdminState({ loading: false, message: "Select a .exe first.", ok: false });
+      return;
+    }
+
+    setAdminState({ loading: true, message: "Uploading update...", ok: null });
+    try {
+      const fileBase64 = await fileToBase64(adminFile);
+      const response = await fetch("/api/admin-update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ version: adminVersion, notes: adminNotes, fileName: adminFile.name, fileBase64 })
+      });
+      const data = await readApiJson(response);
+      setAdminState({ loading: false, message: data.message || "Update uploaded.", ok: Boolean(data.success) });
+      if (data.success) setVersionInfo(data.version);
+    } catch (error) {
+      setAdminState({ loading: false, message: error instanceof Error ? error.message : "Upload failed.", ok: false });
     }
   }
 
@@ -207,13 +262,15 @@ function App() {
   const profileStyle = session.discord.banner
     ? ({ "--profile-banner": `url("${session.discord.banner}")` } as React.CSSProperties)
     : undefined;
+  const isAdmin = session.discord.id === adminDiscordId;
+  const visibleNavItems = navItems.filter((item) => item.id !== "admin" || isAdmin);
 
   return (
     <main className="dashboard-shell">
       <aside className="side-nav">
         <div className="side-brand"><img src={logoUrl} alt="Blaze logo" /><span>BLAZE</span></div>
         <div className="nav-card">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <button key={item.id} className={tab === item.id ? "active" : ""} onClick={() => setTab(item.id)}>
               <span><NavIcon type={item.id} /></span>
               {item.label}
@@ -227,7 +284,7 @@ function App() {
         <header className="content-header">
           <div>
             <span className="eyebrow">Blaze PVP</span>
-            <h1>{navItems.find((item) => item.id === tab)?.label}</h1>
+            <h1>{visibleNavItems.find((item) => item.id === tab)?.label || "Overview"}</h1>
           </div>
           <div className="header-user">
             <span>{rank}</span>
@@ -298,7 +355,7 @@ function App() {
               <span className="eyebrow">Download</span>
               <h2>Blaze Launcher</h2>
               <p className="muted">Launcher oficial de Blaze.</p>
-              <span className="update-badge">Actualizada</span>
+              <span className="update-badge">Actualizada v{versionInfo.version}</span>
             </div>
             <div className="download-actions">
               <a className={!licenseInfo ? "disabled" : ""} href={licenseInfo ? "/api/download-bundle" : undefined}>Download Blaze</a>
@@ -307,6 +364,23 @@ function App() {
           </section>
         )}
 
+        {tab === "admin" && isAdmin && (
+          <section className="panel form-panel admin-panel">
+            <span className="eyebrow">Secure Admin</span>
+            <h2>Update Blaze</h2>
+            <p className="muted">Sube el nuevo .exe. La web actualiza GitHub y Vercel lo publica solo.</p>
+            <label className="field-label">Version</label>
+            <input value={adminVersion} onChange={(event) => setAdminVersion(event.target.value)} placeholder="1.0.1" />
+            <label className="file-picker">
+              <input type="file" accept=".exe,application/x-msdownload" onChange={(event) => setAdminFile(event.target.files?.[0] || null)} />
+              <span>{adminFile ? adminFile.name : "Select Blaze .exe"}</span>
+            </label>
+            <textarea value={adminNotes} onChange={(event) => setAdminNotes(event.target.value)} placeholder="Update notes" />
+            <button onClick={uploadAdminUpdate} disabled={adminState.loading}>{adminState.loading ? "Uploading..." : "Upload Update"}</button>
+            <p className="muted small-note">Current version: {versionInfo.version}</p>
+            <Status state={adminState} />
+          </section>
+        )}
         {tab === "purchase" && (
           <section className="purchase-panel">
             <div>
@@ -450,6 +524,16 @@ function NavIcon({ type }: { type: Tab }) {
     );
   }
 
+  if (type === "admin") {
+    return (
+      <svg {...common}>
+        <path d="M12 3l8 4v5c0 5-3.4 8.4-8 9-4.6-.6-8-4-8-9V7l8-4z" />
+        <path d="M9.5 12.5l1.7 1.7 3.8-4" />
+      </svg>
+    );
+  }
+
+
   return (
     <svg {...common}>
       <path d="M20 12v8H4v-8" />
@@ -462,3 +546,9 @@ function NavIcon({ type }: { type: Tab }) {
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+
+
+
+
+

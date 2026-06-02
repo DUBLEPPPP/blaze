@@ -789,3 +789,68 @@ button:disabled {
     flex-direction: column;
   }
 }
+
+textarea {
+  width: 100%;
+  min-height: 110px;
+  margin-bottom: 18px;
+  padding: 16px 18px;
+  color: #eef9ff;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 14px;
+  outline: none;
+  resize: vertical;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+textarea:focus {
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.08);
+}
+
+.field-label {
+  display: block;
+  margin: 0 0 8px;
+  color: #8c98a4;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.file-picker {
+  display: grid;
+  place-items: center;
+  min-height: 64px;
+  margin: 0 0 18px;
+  padding: 0 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.20);
+  border-radius: 14px;
+  color: #f4f4f4;
+  background: rgba(255, 255, 255, 0.045);
+  cursor: pointer;
+}
+
+.file-picker:hover {
+  border-color: rgba(255, 255, 255, 0.36);
+}
+
+.file-picker input {
+  display: none;
+}
+
+.file-picker span {
+  overflow-wrap: anywhere;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.admin-panel {
+  width: min(720px, 100%);
+}
+
+.small-note {
+  margin: 14px 0 0;
+  font-size: 12px;
+}
